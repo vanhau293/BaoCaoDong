@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -121,7 +119,7 @@ namespace BaoCaoDong
                     dsSX.SelectedIndex = 0;
                     hien.Checked = false;
                     dk.Text = "";
-                    hien.Text = "";
+                    hoac.Text = "";
                 }
             }
 
@@ -209,15 +207,26 @@ namespace BaoCaoDong
                     if (!groupby.Equals("")) groupby = groupby + ", " + tam[i, 0];
                     else groupby = tam[i, 0];
                 }
-                if (!tam[i, 3].Equals(""))
-                {
-                    if (!where.Equals("")) where = where + " AND " + tam[i, 0] +tam[i,3];
-                    else where = tam[i, 0] + tam[i, 3];
-                }
+                
                 if (!tam[i, 4].Equals(""))
                 {
-                    if (!where.Equals("")) where = where + " OR " + tam[i, 0] + tam[i, 4];
-                    else where = tam[i, 0] + tam[i, 4];
+                    if(tam[i, 3].Equals(""))
+                    {
+                        if (!where.Equals("")) where = where + " AND " + tam[i, 0] + tam[i, 4];
+                        else where = tam[i, 0] + tam[i, 4];
+                    }
+                    else
+                    {
+
+                        if (!where.Equals("")) where = where + " AND ( " + tam[i, 0] + tam[i, 3] +" OR "+ tam[i, 0] + tam[i, 4]+" )";
+                        else where = " ( " + tam[i, 0] + tam[i, 3] + " OR " + tam[i, 0] + tam[i, 4] + " )";
+                    }
+                    
+                }
+                else if(tam[i, 4].Equals("")&& !tam[i, 3].Equals(""))
+                {
+                    if (!where.Equals("")) where = where + " AND " + tam[i, 0] + tam[i, 3];
+                    else where = tam[i, 0] + tam[i, 3];
                 }
 
             }
@@ -226,8 +235,8 @@ namespace BaoCaoDong
             if (select.Equals("")) select = "*";
             string sql = "SELECT " + select + " FROM " + from;
             if (!where.Equals("")) sql = sql + " WHERE " + where;
-            if (!orderby.Equals("")) sql = sql + " ORDER BY " + orderby;
             if (!groupby.Equals("")) sql = sql + " GROUP BY " + groupby;
+            if(!orderby.Equals("")) sql = sql + " ORDER BY " + orderby;
             TextBoxSQL.Text = sql;
 
         }
@@ -298,8 +307,25 @@ namespace BaoCaoDong
             if (TextBoxSQL.Text.Equals("")) return;
             Session["query"] = TextBoxSQL.Text;
             Session["title"] = TextBoxTuaDe.Text;
-            Response.Redirect("Report.aspx");
-            Server.Execute("Report.aspx");
+            SqlConnection cnn = new SqlConnection();
+            SqlCommand cmd = new SqlCommand();
+            try
+            {
+                String connect = ConfigurationManager.ConnectionStrings["PETSHOPConnectionString"].ConnectionString;
+                cnn.ConnectionString = connect;
+                cnn.Open();
+                DataSet dt = new DataSet();
+                SqlDataAdapter da = new SqlDataAdapter();
+                da.SelectCommand = new SqlCommand(TextBoxSQL.Text, cnn);
+                da.Fill(dt);
+                Response.Redirect("Report.aspx");
+                Server.Execute("Report.aspx");
+            }
+            catch (Exception x)
+            {
+                ScriptManager.RegisterClientScriptBlock(this, this.GetType(), "alertMessage", "alert('Câu truy vấn không hợp lệ !')", true);
+            }
+            
         }
     }
 }

@@ -29,6 +29,7 @@ namespace BaoCaoDong
             InitBands(xtraRP);
             InitDetailsBaseXRTable(xtraRP, dt, tit);
             ASPxWebDocumentViewer1.OpenReport(xtraRP);
+            
         }
         public override void VerifyRenderingInServerForm(Control control)
         {
